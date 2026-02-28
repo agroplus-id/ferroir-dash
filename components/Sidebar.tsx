@@ -1,20 +1,21 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useMqtt } from '../lib/mqtt-context';
-import { Power, Settings, Circle, MonitorPlay, History, LayoutDashboard } from 'lucide-react';
+import { Circle, Wifi, Radio, X } from 'lucide-react';
 import clsx from 'clsx';
-// For demo, just hardcode logo text as in the requirement
 
 export function Sidebar() {
-  const { isConnected, connectionError, selectedDevice, setSelectedDevice } = useMqtt();
+  const { isConnected, connectionError, devices, selectedDeviceId, selectDevice, removeDevice } = useMqtt();
+  const pathname = usePathname();
 
-  const devices = [
-    { id: 'device1', name: 'Device 1' },
-    { id: 'device2', name: 'Device 2' },
-    { id: 'device3', name: 'Device 3' },
-    { id: 'device4', name: 'Device 4' },
-  ];
+  // Sort: online first, then alphabetical
+  const sortedDevices = [...devices].sort((a, b) => {
+    if (a.online !== b.online) return a.online ? -1 : 1;
+    return a.name.localeCompare(b.name);
+  });
 
   return (
     <aside className="w-56 min-h-screen bg-[#f0e8cc] flex flex-col justify-between">
@@ -41,45 +42,85 @@ export function Sidebar() {
         </div>
 
         <nav className="px-4 space-y-1">
-          <div className="text-xs font-semibold text-[#2d4010] mb-3 px-2 border-b border-[#2d4010]/20 pb-2">Device(s)</div>
+          <div className="text-xs font-semibold text-[#2d4010] mb-3 px-2 border-b border-[#2d4010]/20 pb-2">
+            Device(s){devices.length > 0 && <span className="text-[#2d4010]/40 ml-1">({devices.length})</span>}
+          </div>
+
+          {sortedDevices.length === 0 && (
+            <div className="px-2 py-4 text-center">
+              <Radio className="w-8 h-8 text-[#2d4010]/20 mx-auto mb-2" />
+              <p className="text-xs text-[#2d4010]/40">No devices found</p>
+              <Link
+                href="/provision"
+                className="text-xs text-[#6b8f3a] underline hover:no-underline mt-1 inline-block"
+              >
+                Provision a device
+              </Link>
+            </div>
+          )}
           
-          {devices.map((device) => (
-            <button
+          {sortedDevices.map((device) => (
+            <div
               key={device.id}
-              onClick={() => setSelectedDevice(device.id)}
               className={clsx(
-                "w-full flex items-center gap-3 px-2 py-2 text-sm font-medium transition-colors rounded",
-                selectedDevice === device.id 
+                "group w-full flex items-center gap-3 px-2 py-2 text-sm font-medium transition-colors rounded",
+                selectedDeviceId === device.id 
                   ? "text-[#2d4010]" 
                   : "text-[#2d4010]/50 hover:text-[#2d4010]/80"
               )}
             >
-              <Circle
-                className={clsx(
-                  "w-3 h-3 flex-shrink-0",
-                  selectedDevice === device.id
-                    ? "text-[#4a7c1c] fill-[#4a7c1c]"
-                    : "text-[#2d4010]/30 fill-[#2d4010]/30"
+              <button
+                onClick={() => selectDevice(device.id)}
+                className="flex items-center gap-3 flex-1 min-w-0"
+              >
+                <Circle
+                  className={clsx(
+                    "w-3 h-3 shrink-0",
+                    device.online
+                      ? "text-[#4a7c1c] fill-[#4a7c1c]"
+                      : "text-[#2d4010]/20 fill-[#2d4010]/20"
+                  )}
+                />
+                <span className="truncate">{device.name}</span>
+                {!device.online && (
+                  <span className="text-[10px] text-[#2d4010]/30 ml-auto">offline</span>
                 )}
-              />
-              {device.name}
-            </button>
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  removeDevice(device.id);
+                }}
+                className="shrink-0 opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-red-100 text-[#2d4010]/30 hover:text-red-500 transition-all"
+                title={`Remove ${device.name}`}
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
           ))}
         </nav>
       </div>
 
       <div className="p-4">
         <div className={clsx("flex items-center gap-2 text-xs px-2 py-1", isConnected ? "text-[#4a7c1c]" : "text-red-600")}>
-          <div className={clsx("w-2 h-2 rounded-full flex-shrink-0", isConnected ? "bg-[#4a7c1c] animate-pulse" : "bg-red-500")} />
+          <div className={clsx("w-2 h-2 rounded-full shrink-0", isConnected ? "bg-[#4a7c1c] animate-pulse" : "bg-red-500")} />
           {isConnected ? "Connected" : "Disconnected"}
         </div>
         {connectionError && (
-          <p className="px-2 pb-1 text-[10px] text-red-500 break-words leading-tight">{connectionError}</p>
+          <p className="px-2 pb-1 text-[10px] text-red-500 wrap-break-word leading-tight">{connectionError}</p>
         )}
-        <button className="flex w-full items-center gap-2 px-2 py-2 text-sm text-[#2d4010]/60 hover:text-[#2d4010] transition">
-          <Settings size={15} />
-          Settings
-        </button>
+        <Link
+          href="/provision"
+          className={clsx(
+            "flex w-full items-center gap-2 px-2 py-2 text-sm transition rounded",
+            pathname === '/provision'
+              ? "text-[#2d4010] font-semibold"
+              : "text-[#2d4010]/60 hover:text-[#2d4010]"
+          )}
+        >
+          <Wifi size={15} />
+          WiFi Provisioning
+        </Link>
       </div>
     </aside>
   );

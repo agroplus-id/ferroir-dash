@@ -50,10 +50,10 @@ export function SensorCard({
   className,
 }: SensorCardProps) {
   
-  // Format data for chart
+  // Format data for chart — use wallClock (dashboard time), NOT device ts (millis since boot)
   const chartData = data.slice(-20).map(d => ({
     ...d,
-    timestamp: new Date(d.timestamp || Date.now()).toLocaleTimeString()
+    time: new Date(d.wallClock || Date.now()).toLocaleTimeString(),
   }));
 
   // Fallback color
@@ -86,7 +86,7 @@ export function SensorCard({
                 <stop offset="95%" stopColor={colors.stroke} stopOpacity={0}/>
               </linearGradient>
             </defs>
-            <XAxis dataKey="timestamp" hide />
+            <XAxis dataKey="time" hide />
             <YAxis hide domain={['auto', 'auto']} />
             <Tooltip 
               contentStyle={{ background: '#fff', border: 'none', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
@@ -100,6 +100,7 @@ export function SensorCard({
               stroke={colors.stroke} 
               fill={`url(#gradient-${dataKey})`} 
               strokeWidth={2}
+              isAnimationActive={false}
             />
           </AreaChart>
         </ResponsiveContainer>

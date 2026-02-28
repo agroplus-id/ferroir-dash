@@ -35,20 +35,22 @@ function ControlButton({ label, active, onClick }: ControlButtonProps) {
 }
 
 export function ControlPanel() {
-  const { controls, sendControl, selectedDevice } = useMqtt();
+  const { controls, sendControl, selectedDeviceId } = useMqtt();
 
-  const currentState = controls[selectedDevice] || { aerator: false, light: false };
+  if (!selectedDeviceId) return null;
 
-  const toggle = (key: 'aerator' | 'light') => {
-    sendControl(selectedDevice, key, !currentState[key]);
+  const currentState = controls[selectedDeviceId] || { aerator: false, led: false };
+
+  const toggle = (key: 'aerator' | 'led') => {
+    sendControl(selectedDeviceId, key, !currentState[key]);
   };
 
   return (
     <div className="flex gap-3">
       <ControlButton
         label="Lights"
-        active={currentState.light}
-        onClick={() => toggle('light')}
+        active={currentState.led}
+        onClick={() => toggle('led')}
       />
       <ControlButton
         label="Aerator"
