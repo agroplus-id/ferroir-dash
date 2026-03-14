@@ -1,14 +1,18 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useMqtt } from '../lib/mqtt-context';
+import ProvisionModal from './ProvisionModal';
 import { Circle, Wifi, Radio, X } from 'lucide-react';
 import clsx from 'clsx';
 
 export function Sidebar() {
-  const { isConnected, connectionError, devices, selectedDeviceId, selectDevice, removeDevice } = useMqtt();
+  const { isConnected, connectionError, devices, selectedDeviceId, selectDevice, removeDevice, publishControl } = useMqtt();
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalDevice, setModalDevice] = useState<{ id: string; name: string } | null>(null);
+  const router = useRouter();
   const pathname = usePathname();
 
   // Sort: online first, then alphabetical
@@ -70,7 +74,10 @@ export function Sidebar() {
               )}
             >
               <button
-                onClick={() => selectDevice(device.id)}
+                  onClick={() => {
+                    selectDevice(device.id);
+                    router.push(`/device/${device.id}`);
+                  }}
                 className="flex items-center gap-3 flex-1 min-w-0"
               >
                 <Circle
@@ -86,20 +93,47 @@ export function Sidebar() {
                   <span className="text-[10px] text-[#2d4010]/30 ml-auto">offline</span>
                 )}
               </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  removeDevice(device.id);
-                }}
-                className="shrink-0 opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-red-100 text-[#2d4010]/30 hover:text-red-500 transition-all"
-                title={`Remove ${device.name}`}
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setModalDevice({ id: device.id, name: device.name });
+                    setModalOpen(true);
+                  }}
+                  className="shrink-0 opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-[#eef6e0] text-[#2d4010]/40 hover:text-[#2d4010] transition-all"
+                  title={`Re-provision ${device.name}`}
+                >
+                  <Wifi className="w-4 h-4" />
+                </button>
+
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeDevice(device.id);
+                  }}
+                  className="shrink-0 opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-red-100 text-[#2d4010]/30 hover:text-red-500 transition-all"
+                  title={`Remove ${device.name}`}
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
           ))}
         </nav>
       </div>
+
+      {modalDevice && (
+        <ProvisionModal
+          open={modalOpen}
+          deviceId={modalDevice.id}
+          deviceName={modalDevice.name}
+          onClose={() => setModalOpen(false)}
+          onConfirm={(forget) => {
+            // publish control -> ask device to reprovision
+            publishControl(modalDevice.id, 'provision', forget);
+          }}
+        />
+      )}
 
       <div className="p-4">
         <div className={clsx("flex items-center gap-2 text-xs px-2 py-1", isConnected ? "text-[#4a7c1c]" : "text-red-600")}>

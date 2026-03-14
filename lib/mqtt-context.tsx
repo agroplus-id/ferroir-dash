@@ -48,6 +48,12 @@ interface MqttContextType {
     type: 'aerator' | 'led',
     state: boolean,
   ) => void;
+  /** Publish a control request used for reprovisioning/disconnect via MQTT */
+  publishControl: (
+    deviceId: string,
+    action: 'provision' | 'disconnect',
+    forget?: boolean,
+  ) => void;
 }
 
 const MqttContext = createContext<MqttContextType | undefined>(undefined);
@@ -265,6 +271,22 @@ export const MqttProvider = ({ children }: { children: ReactNode }) => {
     [client, isConnected],
   );
 
+  // ── Device control for provisioning/disconnect (website reprovision) ──
+  const publishControl = useCallback(
+    (deviceId: string, action: 'provision' | 'disconnect', forget?: boolean) => {
+      if (client && isConnected) {
+        const topic = `ferroir/${deviceId}/control`;
+        const payload: any = { action };
+        if (forget) payload.forget = true;
+        client.publish(topic, JSON.stringify(payload), { qos: 0 });
+        console.log(`[MQTT] publish control -> ${topic}`, payload);
+      } else {
+        console.warn('[MQTT] publishControl called when client not connected');
+      }
+    },
+    [client, isConnected],
+  );
+
   const selectDevice = useCallback((id: string) => {
     setSelectedDeviceId(id);
   }, []);
@@ -306,6 +328,7 @@ export const MqttProvider = ({ children }: { children: ReactNode }) => {
         history,
         controls,
         sendControl,
+        publishControl,
       }}
     >
       {children}
