@@ -65,13 +65,9 @@ export default function DevicePage({ params }: { params: any }) {
     icon: any;
   }[] = [
     { title: 'Temperature (Air)',    value: currentData.dht_temp,  unit: '°C',  dataKey: 'dht_temp',  color: 'emerald', icon: Thermometer },
-    { title: 'LPG / Gas (MQ5)',      value: currentData.mq5,       unit: 'ppm', dataKey: 'mq5',       color: 'emerald', icon: Flame },
-    { title: 'Alcohol (MQ3)',        value: currentData.mq3,       unit: 'ppm', dataKey: 'mq3',       color: 'emerald', icon: Zap },
     { title: 'Temperature (Liquid)', value: currentData.temp,      unit: '°C',  dataKey: 'temp',      color: 'emerald', icon: Thermometer },
-    { title: 'Hydrogen (MQ8)',       value: currentData.mq8,       unit: 'ppm', dataKey: 'mq8',       color: 'emerald', icon: Activity },
     { title: 'Humidity (DHT11)',     value: currentData.humidity,  unit: '%',   dataKey: 'humidity',  color: 'emerald', icon: Gauge },
     { title: 'Fermentation pH',      value: currentData.ph,        unit: 'pH',  dataKey: 'ph',        color: 'emerald', icon: FlaskConical },
-    { title: 'TDS Value',            value: currentData.tds,       unit: 'ppm', dataKey: 'tds',       color: 'emerald', icon: Droplets },
   ];
 
   return (
