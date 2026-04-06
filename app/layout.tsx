@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Ferroir Dashboard",
+  title: "Fermego Dashboard",
   description: "Coffee Fermentation Monitoring System",
 };
 
